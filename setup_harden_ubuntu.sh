@@ -1,11 +1,29 @@
 #!/bin/bash
 
 # Disable root login via SSH
-echo "Disabling root login via SSH..."
-sed -i 's/^PermitRootLogin.*/PermitRootLogin no/' /etc/ssh/sshd_config
-systemctl restart sshd
-echo "Root login via SSH has been disabled."
 
+# Memeriksa apakah pengguna memiliki hak akses root (sudo)
+if [ "$(id -u)" -ne "0" ]; then
+    echo "Anda harus menjalankan script ini sebagai root atau dengan sudo."
+    exit 1
+fi
+
+# Menonaktifkan root login di SSH
+echo "Menonaktifkan root login melalui SSH..."
+
+# Mengedit konfigurasi SSH untuk menonaktifkan login root
+sed -i 's/^#PermitRootLogin .*/PermitRootLogin no/' /etc/ssh/sshd_config
+echo "Root login via SSH telah dinonaktifkan."
+
+# Restart layanan SSH agar perubahan diterapkan
+systemctl restart sshd
+
+# Verifikasi apakah perubahan sudah diterapkan
+if grep -q "PermitRootLogin no" /etc/ssh/sshd_config; then
+    echo "Root login via SSH telah berhasil dinonaktifkan."
+else
+    echo "Gagal menonaktifkan root login via SSH."
+fi
 # Enable AppArmor
 echo "Enabling AppArmor..."
 systemctl enable apparmor
