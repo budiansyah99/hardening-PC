@@ -14,9 +14,9 @@ echo "AppArmor has been enabled."
 
 # Create firewall rules for ports 22, 443, and 80
 echo "Configuring firewall rules..."
-ufw allow 22
-ufw allow 443
-ufw allow 80
+ufw allow 22/tcp
+ufw allow 443/tcp
+ufw allow 80/tcp
 ufw enable
 echo "Firewall rules for ports 22, 443, and 80 have been configured."
 
