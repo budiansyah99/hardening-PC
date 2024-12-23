@@ -12,7 +12,7 @@ fi
 echo "Menonaktifkan root login melalui SSH..."
 
 # Mengedit konfigurasi SSH untuk menonaktifkan login root
-sed -i 's/^#PermitRootLogin .*/PermitRootLogin no/' /etc/ssh/sshd_config
+sed -i 's/^#PermitRootLogin .*/PermitRootLogin no/' /etc/ssh/sshd_config.d/01-permitrootlogin.conf
 echo "Root login via SSH telah dinonaktifkan."
 
 # Restart layanan SSH agar perubahan diterapkan
