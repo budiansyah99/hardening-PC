@@ -25,8 +25,7 @@ if grep -q "PermitRootLogin no" /etc/ssh/sshd_config; then
 else
     echo "Gagal menonaktifkan root login via SSH."
 fi
-# enable firewall
-#!/bin/bash
+
 
 # Script untuk start dan enable firewall di RHEL
 
