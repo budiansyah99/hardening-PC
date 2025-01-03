@@ -25,6 +25,37 @@ if grep -q "PermitRootLogin no" /etc/ssh/sshd_config; then
 else
     echo "Gagal menonaktifkan root login via SSH."
 fi
+# enable firewall
+#!/bin/bash
+
+# Script untuk start dan enable firewall di RHEL
+
+echo "Memastikan firewalld terinstal..."
+if ! command -v firewalld &> /dev/null; then
+    echo "firewalld tidak ditemukan. Silakan install dengan 'sudo yum install firewalld'."
+    exit 1
+fi
+
+echo "Memulai layanan firewalld..."
+sudo systemctl start firewalld
+if [ $? -eq 0 ]; then
+    echo "Layanan firewalld berhasil dimulai."
+else
+    echo "Gagal memulai layanan firewalld."
+    exit 1
+fi
+
+echo "Mengaktifkan firewalld agar berjalan otomatis saat boot..."
+sudo systemctl enable firewalld
+if [ $? -eq 0 ]; then
+    echo "Layanan firewalld berhasil diaktifkan."
+else
+    echo "Gagal mengaktifkan layanan firewalld."
+    exit 1
+fi
+
+echo "Memastikan status firewall..."
+sudo systemctl status firewalld --no-pager
 
 # 2. Add allow firewall Linux CentOS port 22, 443, 80
 echo "Configuring firewall rules..."
