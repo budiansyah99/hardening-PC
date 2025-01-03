@@ -27,6 +27,42 @@ else
 fi
 
 
+
+# Script untuk mengaktifkan SELinux dalam mode enforcing
+
+echo "Memeriksa status SELinux saat ini..."
+current_status=$(getenforce)
+
+if [ "$current_status" == "Enforcing" ]; then
+    echo "SELinux sudah dalam mode Enforcing."
+    exit 0
+fi
+
+echo "Mengaktifkan SELinux dalam mode Enforcing untuk sementara..."
+sudo setenforce 1
+if [ $? -eq 0 ]; then
+    echo "SELinux berhasil diubah ke mode Enforcing sementara."
+else
+    echo "Gagal mengaktifkan SELinux sementara. Pastikan SELinux terinstal."
+    exit 1
+fi
+
+echo "Mengubah konfigurasi permanen untuk SELinux..."
+sudo sed -i 's/^SELINUX=.*/SELINUX=enforcing/' /etc/selinux/config
+if [ $? -eq 0 ]; then
+    echo "Konfigurasi SELinux berhasil diatur permanen ke mode Enforcing."
+else
+    echo "Gagal mengubah konfigurasi SELinux. Periksa file /etc/selinux/config."
+    exit 1
+fi
+
+echo "Status SELinux saat ini:"
+getenforce
+
+echo "SELinux berhasil diaktifkan dalam mode Enforcing. Restart diperlukan agar perubahan permanen berlaku."
+
+
+
 # Script untuk start dan enable firewall di RHEL
 
 echo "Memastikan firewalld terinstal..."
