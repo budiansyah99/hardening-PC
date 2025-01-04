@@ -35,7 +35,7 @@ current_status=$(getenforce)
 
 if [ "$current_status" == "Enforcing" ]; then
     echo "SELinux sudah dalam mode Enforcing."
-    exit 0
+#    exit 0
 fi
 
 echo "Mengaktifkan SELinux dalam mode Enforcing untuk sementara..."
