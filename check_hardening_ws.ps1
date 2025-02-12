@@ -161,7 +161,7 @@ Write-Host " "
 Write-Host "--CHECKING USER--"
 # Define the new user's details
 $newUsername = "user"
-$newPassword = "P@ssw0rd#2024"  # Make sure to use a strong password
+$newPassword = "P@ssw0rd.2025!!!"  # Make sure to use a strong password
 $newFullName = "User"
 $newDescription = "Description of the new user"
 
