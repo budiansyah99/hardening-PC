@@ -3,24 +3,29 @@
 # Disable root login via SSH
 
 # Memeriksa apakah pengguna memiliki hak akses root (sudo)
+
+
+
+# Cek apakah dijalankan sebagai root
 if [ "$(id -u)" -ne "0" ]; then
     echo "Anda harus menjalankan script ini sebagai root atau dengan sudo."
     exit 1
 fi
 
-# Menonaktifkan root login di SSH
 echo "Menonaktifkan root login melalui SSH..."
 
-# Mengedit konfigurasi SSH untuk menonaktifkan login root
-sed -i 's/^#PermitRootLogin .*/PermitRootLogin no/' /etc/ssh/sshd_config
-echo "Root login via SSH telah dinonaktifkan."
-echo "PermitRootLogin no" >  /etc/ssh/sshd_config
+# Ubah atau tambahkan konfigurasi PermitRootLogin
+if grep -q "^#\?PermitRootLogin" /etc/ssh/sshd_config; then
+    sed -i 's/^#\?PermitRootLogin.*/PermitRootLogin no/' /etc/ssh/sshd_config
+else
+    echo "PermitRootLogin no" >> /etc/ssh/sshd_config
+fi
 
-# Restart layanan SSH agar perubahan diterapkan
+# Restart SSH service
 systemctl restart sshd
 
-# Verifikasi apakah perubahan sudah diterapkan
-if grep -q "PermitRootLogin no" /etc/ssh/sshd_config; then
+# Verifikasi
+if grep -q "^PermitRootLogin no" /etc/ssh/sshd_config; then
     echo "Root login via SSH telah berhasil dinonaktifkan."
 else
     echo "Gagal menonaktifkan root login via SSH."
