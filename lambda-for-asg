@@ -1,0 +1,114 @@
+from datetime import datetime
+import boto3
+import time
+
+ec2 = boto3.client('ec2')
+asg = boto3.client('autoscaling')
+sns = boto3.client('sns')
+
+INSTANCE_ID = "i-0a58a1f53c510c0f5"
+INSTANCE_LABEL = "web server"
+LAUNCH_TEMPLATE_ID = "lt-0a51ef1e690f19653"
+ASG_NAME = "asg"
+SNS_TOPIC_ARN = "arn:aws:sns:us-east-1:471112953209:webserver-update-asg-notification:38a3edfe-e62f-4189-ac64-b5109f34e297"
+
+
+def get_latest_asg_instance():
+    response = asg.describe_auto_scaling_groups(
+        AutoScalingGroupNames=[ASG_NAME]
+    )
+
+    instances = response['AutoScalingGroups'][0]['Instances']
+
+    if not instances:
+        raise Exception("No instances found in ASG")
+
+    return instances[-1]['InstanceId']
+
+
+def send_sns_email(message):
+    sns.publish(
+        TopicArn=SNS_TOPIC_ARN,
+        Subject="Odoo Production Deployment Success",
+        Message=message
+    )
+
+
+def lambda_handler(event, context):
+
+    print("Deployment started")
+
+    timestamp = datetime.utcnow().strftime('%Y%m%d-%H%M%S')
+    ami_name = f"{INSTANCE_LABEL}-{timestamp}"
+
+    ami = ec2.create_image(
+        InstanceId=INSTANCE_ID,
+        Name=ami_name,
+        NoReboot=True
+    )
+
+    ami_id = ami['ImageId']
+
+    waiter = ec2.get_waiter('image_available')
+    waiter.wait(ImageIds=[ami_id])
+
+    latest_lt = ec2.describe_launch_template_versions(
+        LaunchTemplateId=LAUNCH_TEMPLATE_ID,
+        Versions=['$Latest']
+    )
+
+    source_version = latest_lt['LaunchTemplateVersions'][0]['VersionNumber']
+
+    new_lt = ec2.create_launch_template_version(
+        LaunchTemplateId=LAUNCH_TEMPLATE_ID,
+        SourceVersion=str(source_version),
+        LaunchTemplateData={'ImageId': ami_id}
+    )
+
+    new_version = new_lt['LaunchTemplateVersion']['VersionNumber']
+
+    ec2.modify_launch_template(
+        LaunchTemplateId=LAUNCH_TEMPLATE_ID,
+        DefaultVersion=str(new_version)
+    )
+
+    refresh = asg.start_instance_refresh(
+        AutoScalingGroupName=ASG_NAME,
+        Strategy='Rolling',
+        Preferences={
+            'MinHealthyPercentage': 100,
+            'InstanceWarmup': 120
+        }
+    )
+
+    refresh_id = refresh['InstanceRefreshId']
+
+    time.sleep(60)
+
+    new_instance_id = get_latest_asg_instance()
+
+    email_message = f"""
+Deployment Success
+
+AMI Name: {ami_name}
+AMI ID: {ami_id}
+
+Launch Template Version: {new_version}
+
+Instance Refresh ID: {refresh_id}
+
+New Instance ID: {new_instance_id}
+
+Deployment Time (UTC):
+{datetime.utcnow()}
+"""
+
+    send_sns_email(email_message)
+
+    return {
+        "status": "success",
+        "ami_id": ami_id,
+        "launch_template_version": new_version,
+        "instance_id": new_instance_id,
+        "instance_refresh_id": refresh_id
+    }
